@@ -1,5 +1,8 @@
 # **Proyecto Mini-Maltego — Arquitectura propuesta para AED3**
 
+> **Documento histórico de propuesta.** Para la arquitectura efectivamente
+> implementada y sus limitaciones consultá la [guía del MVP](mvp-academico.md).
+
 ## **1\. Propósito del proyecto**
 
 El proyecto consiste en desarrollar una aplicación inspirada conceptualmente en herramientas de análisis OSINT como Maltego, pero con un alcance **académico, reducido y controlado**.
@@ -942,4 +945,3 @@ Para mantener trazabilidad sobre el origen de una relación.
 ---
 
 Esta sería la **base arquitectónica v1.1** que habíamos alcanzado. A partir de acá, el siguiente paso lógico es bajar un nivel: **diseñar concretamente las clases/objetos, el modelo de la base de datos y la interfaz del `Grafo`**, antes de elegir definitivamente el lenguaje y framework.
-

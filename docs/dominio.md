@@ -1,5 +1,8 @@
 # **Diseño de Dominio y Motor del Grafo — v1.0**
 
+> **Diseño histórico previo a la implementación.** El estado real del dominio
+> y los algoritmos está en la [guía del MVP](mvp-academico.md) y en el código.
+
 **Proyecto:** Mini-Maltego académico  
 **Materia:** Algoritmos y Estructuras de Datos 3  
 **Estado:** Diseño técnico previo a implementación  
@@ -2298,4 +2301,3 @@ La decisión más importante que se agregó en esta etapa es que **Evidencia ser
 Con esto ya tenemos un contrato suficientemente definido para que la siguiente etapa pueda abordar **la tecnología y el diseño de backend/frontend sin volver a discutir qué debe hacer el motor del grafo**.
 
 El siguiente nivel natural, todavía sin programar, sería transformar este documento en tres artefactos técnicos: **diagrama de clases conceptual, diagrama entidad-relación y especificación formal de los casos de uso del MVP**.
-

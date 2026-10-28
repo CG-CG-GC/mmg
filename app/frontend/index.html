@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Exploración académica de entidades, relaciones y recorridos en un grafo dirigido.">
+  <title>Mini-Maltego académico</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/vendor/cytoscape.min.js"></script>
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div><p class="eyebrow">Laboratorio de grafos · AED3</p><h1>Mini-Maltego académico</h1></div>
+    <p class="masthead-note">Entidades, relaciones y recorridos<br>en un grafo dirigido</p>
+  </header>
+  <main>
+    <div id="notice" class="notice" role="status" aria-live="polite">Preparando el espacio de trabajo…</div>
+    <div class="workspace">
+      <section class="canvas-section" aria-labelledby="graph-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">01 / Exploración</p><h2 id="graph-title">Grafo de relaciones</h2></div>
+          <div class="toolbar">
+            <button type="button" id="refresh">Actualizar</button>
+            <button type="button" id="zoom-in" aria-label="Acercar grafo">Acercar</button>
+            <button type="button" id="zoom-out" aria-label="Alejar grafo">Alejar</button>
+            <button type="button" id="fit">Ajustar vista</button>
+          </div>
+        </div>
+        <p class="help">Las flechas indican la dirección. Seleccioná un elemento en el grafo o en la lista para ver sus detalles.</p>
+        <div class="graph-frame">
+          <div id="graph" aria-label="Visualización del grafo dirigido"></div>
+          <p id="graph-message" class="graph-message" role="status">Cargando grafo…</p>
+        </div>
+        <div class="graph-footer"><span id="graph-count">—</span><span>Desplazá el fondo y usá la rueda para acercar o alejar.</span></div>
+        <details class="element-list">
+          <summary>Explorar elementos en una lista</summary>
+          <div class="list-columns">
+            <div><h3>Entidades</h3><ul id="entity-list"></ul></div>
+            <div><h3>Relaciones</h3><ul id="relation-list"></ul></div>
+          </div>
+        </details>
+      </section>
+      <aside class="inspector" aria-labelledby="selection-title">
+        <p class="eyebrow">02 / Inspección</p>
+        <h2 id="selection-title">Selección</h2>
+        <div id="selection"><p class="muted">Seleccioná una entidad o relación para consultar sus datos.</p></div>
+      </aside>
+    </div>
+    <div class="workbench">
+      <section class="operation" aria-labelledby="entity-title">
+        <p class="eyebrow">03 / Entidades</p><h2 id="entity-title">Crear entidad</h2>
+        <form id="entity-form">
+          <label for="entity-type">Tipo</label>
+          <select id="entity-type" name="tipo" required>
+            <option value="PERSONA">Persona</option><option value="ORGANIZACION">Organización</option>
+            <option value="EMAIL">Email</option><option value="USUARIO">Usuario</option>
+            <option value="DOMINIO">Dominio</option><option value="SITIO_WEB">Sitio web</option><option value="IP">IP</option>
+          </select>
+          <label for="entity-value">Valor</label><input id="entity-value" name="valor" required>
+          <label for="entity-normalized">Valor normalizado</label><input id="entity-normalized" name="valor_normalizado" required aria-describedby="normalized-help">
+          <p id="normalized-help" class="field-help">Ingresalo explícitamente: la política de normalización aún no está definida.</p>
+          <label for="entity-description">Descripción <span>(opcional)</span></label><textarea id="entity-description" name="descripcion" rows="2"></textarea>
+          <label for="entity-metadata">Metadatos JSON <span>(opcional)</span></label><textarea id="entity-metadata" name="metadata" rows="2" placeholder='{"fuente": "…"}'></textarea>
+          <button class="primary" type="submit">Crear entidad</button>
+          <p class="form-message" id="entity-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <section class="operation" aria-labelledby="relation-title">
+        <p class="eyebrow">04 / Relaciones</p><h2 id="relation-title">Crear relación</h2>
+        <form id="relation-form">
+          <label for="relation-origin">Origen</label><select id="relation-origin" name="origen_id" required></select>
+          <label for="relation-type">Tipo</label>
+          <select id="relation-type" name="tipo" required>
+            <option value="POSEE">Posee</option><option value="UTILIZA">Utiliza</option>
+            <option value="TRABAJA_EN">Trabaja en</option><option value="ADMINISTRA">Administra</option>
+            <option value="PERTENECE_A">Pertenece a</option><option value="APUNTA_A">Apunta a</option>
+          </select>
+          <label for="relation-target">Destino</label><select id="relation-target" name="destino_id" required></select>
+          <label for="relation-description">Descripción <span>(opcional)</span></label><textarea id="relation-description" name="descripcion" rows="2"></textarea>
+          <label for="relation-date">Fecha <span>(opcional)</span></label><input id="relation-date" name="fecha" type="date">
+          <button class="primary" type="submit">Crear relación</button>
+          <p class="form-message" id="relation-message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <section class="operation analysis" aria-labelledby="algorithm-title">
+        <p class="eyebrow">05 / Algoritmos</p><h2 id="algorithm-title">Explorar el grafo</h2>
+        <p class="help">Los recorridos siguen la dirección de las relaciones y se calculan en el servidor.</p>
+        <form id="algorithm-form">
+          <label for="algorithm">Algoritmo</label>
+          <select id="algorithm" name="algorithm">
+            <option value="bfs">BFS · recorrido por niveles</option>
+            <option value="dfs">DFS · recorrido en profundidad</option>
+            <option value="camino">Camino más corto · por cantidad de relaciones</option>
+          </select>
+          <label for="algorithm-origin">Entidad inicial</label><select id="algorithm-origin" name="origen" required></select>
+          <div id="algorithm-target-field" hidden>
+            <label for="algorithm-target">Entidad destino</label><select id="algorithm-target" name="destino"></select>
+          </div>
+          <button class="primary" type="submit">Ejecutar algoritmo</button>
+          <p class="form-message" id="algorithm-message" role="status" aria-live="polite"></p>
+        </form>
+        <div class="result" aria-live="polite"><h3>Resultado</h3><div id="result"><p class="muted">Elegí un algoritmo y una entidad inicial.</p></div></div>
+      </section>
+    </div>
+  </main>
+  <footer>Mini-Maltego académico <span>·</span> Visualización de un grafo dirigido</footer>
+</body>
+</html>

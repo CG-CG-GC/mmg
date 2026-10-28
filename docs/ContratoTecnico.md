@@ -1,5 +1,10 @@
 # **CONTRATO TÉCNICO DEL PROYECTO**
 
+> **Contexto:** este contrato conserva decisiones y objetivos previos. Para
+> distinguir lo efectivamente implementado de lo propuesto, consultá el código
+> y la [guía del MVP](mvp-academico.md); no todos los objetivos son evidencia
+> de funcionalidad terminada.
+
 ## **Mini-Maltego Académico — v1.0**
 
 **Estado:** Aprobado para inicio de implementación  
@@ -113,6 +118,10 @@ FastAPI será responsable de:
 
 FastAPI no será responsable de implementar BFS, DFS ni la estructura interna del grafo.
 
+La aplicación se crea mediante `create_app(database_path)`. El motor de SQLAlchemy se libera
+al finalizar el ciclo de vida de FastAPI (`lifespan`), y las pruebas HTTP deben cerrar
+`TestClient` mediante su administrador de contexto.
+
 ---
 
 ## **Frontend**
@@ -200,6 +209,15 @@ Esta separación es obligatoria para mantener la trazabilidad académica.
 **pytest**
 
 El motor del grafo debe comenzar a probarse antes de construir toda la aplicación web.
+Las pruebas de integración usan bases SQLite temporales; `httpx2` es el cliente de prueba
+compatible con la versión de Starlette declarada por el entorno.
+
+Para instalar las dependencias y ejecutar la suite completa:
+
+```text
+python -m pip install -r requirements.txt
+python -m pytest -q
+```
 
 ---
 
@@ -569,9 +587,11 @@ Servicio
 
 El motor del grafo nunca realizará directamente operaciones SQL.
 
-Una modificación no debe considerarse completada si solamente se actualizó uno de los dos estados.
-
-La estrategia concreta para manejar transacciones, errores y recuperación deberá definirse durante la implementación del stack.
+Después de confirmar una escritura en SQLite, el servicio reconstruye el grafo y publica la nueva
+instancia únicamente si la reconstrucción termina correctamente. Si falla en ese punto, la
+escritura confirmada permanece en SQLite, el grafo en memoria se invalida y la API devuelve
+`500`; las operaciones que necesitan el grafo devuelven `503` hasta reconstruirlo. La transacción
+ya confirmada no se revierte. El servicio puede reconstruir el grafo desde la persistencia.
 
 ---
 
@@ -1133,4 +1153,3 @@ Integraciones OSINT
 
 > No construir un sistema grande que demuestre poco.  
 > Construir un sistema pequeño en el que cada decisión técnica pueda ser explicada, probada y defendida.
-

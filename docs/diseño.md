@@ -1,5 +1,9 @@
 # **Diseño de Clases, DER y Casos de Uso del MVP — v1.0**
 
+> **Diseño conceptual histórico.** El esquema y los casos implementados se
+> describen en la [guía del MVP](mvp-academico.md), que prevalece para conocer
+> el estado actual.
+
 **Proyecto:** Mini-Maltego académico  
 **Materia:** Algoritmos y Estructuras de Datos 3  
 **Estado:** Diseño conceptual previo a selección de tecnología  
@@ -1722,4 +1726,3 @@ Estas decisiones **no afectan el modelo conceptual actual**.
 **DISEÑO LISTO PARA SELECCIÓN DE STACK**
 
 La conclusión importante es que **ya no necesitamos seguir agregando documentación conceptual antes de elegir tecnología**. El próximo paso puede ser comparar stacks candidatos contra este contrato —por ejemplo, facilidad para implementar el grafo, persistencia relacional, visualización, testing y tiempo disponible— y recién entonces seleccionar uno.
-

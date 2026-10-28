@@ -1,5 +1,13 @@
 # **Estado del Proyecto — Mini-Maltego Académico**
 
+> **Actualización de cierre del MVP:** el contenido fechado a continuación es
+> un estado histórico de planificación y no refleja la implementación actual.
+> Para instalación, alcance y pruebas consultá el [README](../README.md) y
+> la [guía del MVP](mvp-academico.md). El dominio, la persistencia, la API y
+> el frontend están implementados en el workspace; la última ejecución local
+> de pytest registró 61 pruebas aprobadas. Esto no confirma requisitos docentes
+> externos ni convierte las propuestas futuras en funcionalidades existentes.
+
 **Estado:** Diseño técnico previo al desarrollo  
 **Fecha:** 7 de octubre de 2026  
 **Versión:** 0.1
@@ -393,4 +401,3 @@ Cada vez que se complete una etapa importante:
 5. registrar próximo agente/tarea.
 
 Esto permite cambiar de conversación sin perder continuidad.
-

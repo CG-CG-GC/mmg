@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app.api.routes import router
@@ -47,10 +50,18 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         evidencia_repository=evidencia_repository,
     )
 
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            engine.dispose()
+
     app = FastAPI(
         title="Mini-Maltego Académico API",
         version="0.1.0",
         description="API académica para entidades, relaciones, evidencias y algoritmos de grafos.",
+        lifespan=lifespan,
     )
     app.state.engine = engine
     app.state.session_factory = session_factory
@@ -92,9 +103,12 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
 
     app.include_router(router)
 
-    @app.on_event("shutdown")
-    def close_engine() -> None:
-        engine.dispose()
+    frontend = Path(__file__).resolve().parents[1] / "frontend"
+    app.mount("/static", StaticFiles(directory=frontend), name="frontend")
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(frontend / "index.html")
 
     return app
 
