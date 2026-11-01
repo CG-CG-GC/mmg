@@ -212,10 +212,10 @@ El motor del grafo debe comenzar a probarse antes de construir toda la aplicaci�
 Las pruebas de integración usan bases SQLite temporales; `httpx2` es el cliente de prueba
 compatible con la versión de Starlette declarada por el entorno.
 
-Para instalar las dependencias y ejecutar la suite completa:
+Para instalar las dependencias de desarrollo (incluye las de ejecución) y ejecutar la suite completa:
 
 ```text
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 

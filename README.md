@@ -61,7 +61,8 @@ copia local de Cytoscape.js; no requiere compilación del frontend.
 
 ## Pruebas
 
-Desde la raíz y con las dependencias instaladas:
+Desde la raíz y con las dependencias de desarrollo instaladas
+(`requirements-dev.txt`; `requirements.txt` contiene solo lo necesario para ejecutar la aplicación):
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
@@ -72,6 +73,11 @@ verificación del MVP se obtuvieron **61 aprobadas**; los resultados futuros
 dependen del entorno y de los cambios posteriores. Las pruebas automatizadas
 del frontend comprueban la entrega de archivos, no toda la interacción visual
 en un navegador.
+
+## Calidad y seguridad
+
+Ruff, Bandit, pip-audit y el flujo de GitHub Actions están descritos en
+[la guía de herramientas de calidad](docs/herramientas-calidad-seguridad.md).
 
 ## Documentación
 
