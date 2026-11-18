@@ -1,0 +1,9 @@
+# Desarrollo, pruebas y controles de calidad.
+# Incluye las dependencias de ejecución de requirements.txt.
+-r requirements.txt
+
+httpx2>=2.0,<3.0
+pytest>=8.0,<10.0
+ruff>=0.17,<1.0
+bandit>=1.9,<2.0
+pip-audit>=2.10,<3.0

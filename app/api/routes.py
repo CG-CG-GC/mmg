@@ -1,22 +1,28 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Path, Request, Response, status
 
 from app.api.schemas import (
     BFSRequest,
     DFSRequest,
     EntityCreateRequest,
     EntityResponse,
+    EntityUpdateRequest,
     EvidenceCreateRequest,
     EvidenceResponse,
     PathRequest,
     RelationCreateRequest,
     RelationResponse,
+    RelationUpdateRequest,
 )
 from app.persistence.repositories import (
     EntidadCreateData,
+    EntidadUpdateData,
     EvidenciaCreateData,
     RelacionCreateData,
+    RelacionUpdateData,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -47,6 +53,16 @@ def obtener_entidad(entity_id: int, request: Request) -> EntityResponse:
     if entity is None:
         raise HTTPException(status_code=404, detail=f"No existe entidad con id {entity_id}.")
     return entity
+
+
+@router.put("/entidades/{entity_id}", response_model=EntityResponse)
+def actualizar_entidad(
+    entity_id: Annotated[int, Path(gt=0)],
+    payload: EntityUpdateRequest,
+    request: Request,
+) -> EntityResponse:
+    data = EntidadUpdateData(**payload.model_dump())
+    return request.app.state.graph_service.actualizar_entidad(entity_id, data)
 
 
 @router.delete("/entidades/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -82,6 +98,16 @@ def obtener_relacion(relation_id: int, request: Request) -> RelationResponse:
     if relation is None:
         raise HTTPException(status_code=404, detail=f"No existe relación con id {relation_id}.")
     return relation
+
+
+@router.put("/relaciones/{relation_id}", response_model=RelationResponse)
+def actualizar_relacion(
+    relation_id: Annotated[int, Path(gt=0)],
+    payload: RelationUpdateRequest,
+    request: Request,
+) -> RelationResponse:
+    data = RelacionUpdateData(**payload.model_dump())
+    return request.app.state.graph_service.actualizar_relacion(relation_id, data)
 
 
 @router.delete("/relaciones/{relation_id}", status_code=status.HTTP_204_NO_CONTENT)

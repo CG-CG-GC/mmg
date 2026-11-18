@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from app.application.errors import GraphUnavailableError
+from app.domain.errores import EntidadNoEncontradaError
+
+# Serializa carga y publicación del grafo para todas las instancias del proceso.
+# Sin esto, una reconstrucción leída antes de un commit puede publicarse después de
+# otra más reciente y dejar el grafo atrasado. Solo cubre un proceso: ver HANDOFF.
+_PUBLICACION_GRAFO = threading.RLock()
 
 if TYPE_CHECKING:
     from app.domain.grafo import Graph
+    from app.persistence.repositories import EntidadUpdateData, RelacionUpdateData
     from app.persistence.repositories import (
         EntidadCreateData,
         EntidadRepository,
@@ -58,20 +66,20 @@ class GraphApplicationService:
 
     def reconstruir_grafo(self) -> Graph:
         """Reconstruye una instancia completa y la publica de forma atómica."""
-        try:
-            candidate = self._graph_loader(self._session_factory)
-        except Exception:
-            # No conservar una proyección que ya podría no representar la BD.
-            self._graph = None
-            raise
-        self._graph = candidate
-        return candidate
+        with _PUBLICACION_GRAFO:
+            return self._cargar_y_publicar()
 
     def crear_entidad(self, data: EntidadCreateData):
         self._require_graph()
         created = self._entidades.create(data)
         self._refresh_after_write()
         return created
+
+    def actualizar_entidad(self, entity_id: int, data: EntidadUpdateData):
+        self._require_graph()
+        updated = self._entidades.update(entity_id, data)
+        self._refresh_after_write()
+        return updated
 
     def eliminar_entidad(self, entity_id: int) -> bool:
         self._require_graph()
@@ -86,6 +94,17 @@ class GraphApplicationService:
         self._refresh_after_write()
         return created
 
+    def actualizar_relacion(self, relation_id: int, data: RelacionUpdateData):
+        graph = self.graph
+        for entity_id in (data.origen_id, data.destino_id):
+            if not graph.existe_entidad(entity_id):
+                raise EntidadNoEncontradaError(
+                    f"No existe entidad referenciada con id {entity_id}."
+                )
+        updated = self._relaciones.update(relation_id, data)
+        self._refresh_after_write()
+        return updated
+
     def eliminar_relacion(self, relation_id: int) -> bool:
         self._require_graph()
         deleted = self._relaciones.delete_by_id(relation_id)
@@ -99,6 +118,10 @@ class GraphApplicationService:
         self._refresh_after_write()
         return created
 
+    def refrescar_tras_escritura(self) -> None:
+        """Reconstruye el grafo tras una escritura confirmada fuera de los CRUD."""
+        self._refresh_after_write()
+
     def _require_graph(self) -> None:
         if self._graph is None:
             raise GraphUnavailableError(
@@ -106,11 +129,18 @@ class GraphApplicationService:
             )
 
     def _refresh_after_write(self) -> None:
+        # La escritura del repositorio ya confirmó su transacción. La carga y la
+        # publicación van juntas bajo el cerrojo, así que el último snapshot publicado
+        # es el último leído.
+        with _PUBLICACION_GRAFO:
+            self._cargar_y_publicar()
+
+    def _cargar_y_publicar(self) -> Graph:
         try:
             candidate = self._graph_loader(self._session_factory)
         except Exception:
-            # La escritura del repositorio ya confirmó su transacción. No podemos
-            # revertirla sin cambiar sus contratos; invalidamos el grafo y fallamos.
+            # No conservar una proyección que ya podría no representar la BD.
             self._graph = None
             raise
         self._graph = candidate
+        return candidate

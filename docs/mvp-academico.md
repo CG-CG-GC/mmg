@@ -59,7 +59,8 @@ Los catálogos iniciales provienen de los enums del dominio:
 
 El cliente suministra `valor_normalizado`: todavía no hay una política de
 normalización automática. La unicidad compara el valor suministrado junto al
-tipo; la respuesta de entidad no incluye ese campo. La metadata es un
+tipo; la respuesta de entidad incluye el valor normalizado persistido para que
+la interfaz pueda editar otros campos sin sustituirlo. La metadata es un
 diccionario serializado como texto JSON; las fechas opcionales se guardan como
 texto ISO. El dominio exige `valor` y `fuente` no blancos, IDs positivos y tipos
 válidos; la API verifica longitud mínima también para `valor_normalizado`,
@@ -125,13 +126,15 @@ Todas las rutas de datos usan el prefijo `/api/v1`:
 | Método y ruta | Operación |
 | --- | --- |
 | `GET`, `POST /entidades` | Listar y crear entidades. |
-| `GET`, `DELETE /entidades/{id}` | Consultar y eliminar entidad. |
+| `GET`, `PUT`, `DELETE /entidades/{id}` | Consultar, editar (`PUT` reemplaza tipo, valor, valor normalizado, descripción y metadata; el ID se conserva) y eliminar entidad. |
 | `GET`, `POST /relaciones` | Listar y crear relaciones. |
-| `GET`, `DELETE /relaciones/{id}` | Consultar y eliminar relación. |
+| `GET`, `PUT`, `DELETE /relaciones/{id}` | Consultar, editar (`PUT` reemplaza origen, destino, tipo, descripción y fecha; las evidencias se conservan) y eliminar relación. |
 | `POST /relaciones/{id}/evidencias` | Crear evidencia; se lee dentro de la respuesta de relación. No hay endpoints de edición o eliminación de evidencias. |
 | `GET /grafo` | Listas `nodes` y `edges` con campos `data` para visualización. |
-| `POST /algoritmos/bfs`, `/algoritmos/dfs` | Solicitud `{"id_inicial": 1}`; resultados de recorrido. |
+| `POST /algoritmos/bfs`, `/algoritmos/dfs` | Solicitud `{"id_inicial": 1}`; resultados de recorrido. BFS también devuelve niveles y predecesores. |
 | `POST /algoritmos/camino` | Solicitud `{"id_origen": 1, "id_destino": 2}`; resultado con entidades y relaciones. |
+| `POST /osint/dns` | Consulta DNS de `dominio` con `tipos` opcionales (por defecto A, AAAA, CNAME, MX y NS). Es solo una vista previa: no escribe nada. |
+| `POST /osint/dns/incorporaciones` | Guarda un lote de registros A y AAAA ya revisados, con su procedencia declarada por el cliente. Crea o reutiliza dominio, IP, relaciones `APUNTA_A` y evidencias en una transacción. No vuelve a consultar el DNS. |
 
 La API devuelve 201 al crear, 204 al eliminar, 404 para recursos inexistentes,
 409 para conflictos de integridad, 422 para validación, 500 ante ciertos errores
@@ -147,21 +150,28 @@ afirma cobertura completa.
 
 | Funcionalidad | Módulo responsable | Concepto AED3 | Evidencia automatizada | Estado |
 | --- | --- | --- | --- | --- |
-| Entidades, metadatos y unicidad | `domain/entidad.py`, `persistence/repositories.py`, `api/routes.py` | Identidad, diccionario | `tests/domain/test_entidad.py`, `tests/persistence/test_entidad_repository.py`, `tests/api/test_api.py` | Implementado; sin edición |
-| Relaciones dirigidas, paralelas y duplicados | `domain/grafo.py`, `persistence/repositories.py` | Aristas, lista de adyacencia | `tests/domain/test_grafo_operaciones.py`, `tests/persistence/test_relacion_repository.py`, `tests/api/test_api.py` | Implementado; sin edición |
+| Entidades, metadatos y unicidad | `domain/entidad.py`, `persistence/repositories.py`, `api/routes.py` | Identidad, diccionario | `tests/domain/test_entidad.py`, `tests/persistence/test_entidad_repository.py`, `tests/persistence/test_entidad_update.py`, `tests/api/test_update_api.py`, `tests/api/test_api.py` | Implementado; edición por `PUT` y en línea en la interfaz; sin eliminación en la interfaz |
+| Relaciones dirigidas, paralelas y duplicados | `domain/grafo.py`, `persistence/repositories.py` | Aristas, lista de adyacencia | `tests/domain/test_grafo_operaciones.py`, `tests/persistence/test_relacion_repository.py`, `tests/persistence/test_relacion_update.py`, `tests/api/test_update_api.py`, `tests/api/test_api.py` | Implementado; edición por `PUT` y en línea en la interfaz; sin eliminación en la interfaz |
 | Evidencia y cascadas | `persistence/schema.py`, `persistence/repositories.py`, `api/routes.py` | Asociación relación-evidencia | `tests/persistence/test_evidencia_repository.py`, `tests/persistence/test_integridad_referencial.py`, `tests/api/test_api.py` | Creación y consulta por relación; sin gestión completa en API o interfaz |
 | BFS, ciclos y niveles | `domain/grafo.py` | Cola FIFO, visitados, predecesores | `tests/domain/test_grafo_bfs.py`, `tests/api/test_api.py` | Implementado |
-| DFS | `domain/grafo.py` | Recursión, visitados | `tests/domain/test_grafo_dfs.py`, `tests/api/test_api.py` | Implementado |
+| DFS | `domain/grafo.py` | Recursión, visitados | `tests/domain/test_grafo_dfs.py`, `tests/api/test_api.py` | Implementado; recursivo, con límite de profundidad (ver limitaciones) |
 | Camino mínimo en aristas | `domain/grafo.py` | BFS, predecesores | `tests/domain/test_grafo_camino.py`, `tests/api/test_api.py` | Implementado, no ponderado |
-| Reconstrucción y fallo posterior al commit | `application/service.py`, `persistence/graph_loader.py` | Proyección de adyacencia | `tests/application/test_service.py`, `tests/persistence/test_graph_loader.py`, `tests/api/test_api.py` | Implementado con limitación de atomicidad |
-| Entrega de interfaz y recursos | `api/main.py`, `frontend/` | Visualización de grafo | `tests/api/test_frontend.py` | Recursos verificados; test automatizado no prueba interacción de navegador |
+| Consulta DNS (vista previa) | `application/dns_lookup.py`, `integrations/dns_google.py`, `api/dns_routes.py`, `domain/nombres_dns.py` | Validación de entrada, política de nombres | `tests/application/test_dns_lookup.py`, `tests/api/test_dns_api.py`, `tests/api/test_dns_idna_api.py`, `tests/domain/test_nombres_dns.py` | Implementado; no guarda nada; la prueba de red es opt-in |
+| Incorporación DNS A/AAAA | `application/incorporacion_dns.py`, `persistence/incorporacion_dns.py` | Transacción `BEGIN IMMEDIATE`, deduplicación | `tests/persistence/test_incorporacion_dns.py`, `tests/application/test_incorporacion_servicio_dns.py`, `tests/api/test_incorporacion_dns_api.py`, `tests/application/test_concurrencia_grafo.py` | Implementado para un proceso; CNAME, MX y NS no se incorporan |
+| Reconstrucción y fallo posterior al commit | `application/service.py`, `persistence/graph_loader.py` | Proyección de adyacencia | `tests/application/test_service.py`, `tests/persistence/test_graph_loader.py`, `tests/api/test_api.py`, `tests/application/test_concurrencia_grafo.py` | Implementado con limitación de atomicidad y sincronización solo por proceso |
+| Entrega de interfaz y recursos | `api/main.py`, `frontend/` | Visualización de grafo | `tests/api/test_frontend.py`, `tests/api/test_osint_frontend.py`, `tests/api/test_osint_incorporacion_frontend.py` | Recursos verificados; las pruebas automatizadas no reemplazan la interacción en navegador |
 
-La ejecución local `python -m pytest -q` en el entorno existente dio
-**61 aprobadas, 0 fallidas y 0 omitidas**. Se informó una demostración previa
-en navegador real; ese dato no sustituye pruebas automatizadas de interacción
-y no se reproduce como una nueva medición en esta guía.
+La ejecución de verificación del 18 de noviembre de 2026, con
+`python -m pytest -q`, dio **368 aprobadas, 0 fallidas y 1 omitida**. La omitida
+es la prueba opt-in de red (`MMG_RUN_NETWORK_TESTS=1`). Las capturas del manual se
+tomaron en navegador, pero no son pruebas automatizadas de interacción.
 
 ## Guion de demostración y defensa
+
+La demostración completa, con datos ficticios y plan alternativo, está en
+[demo-presentacion.md](demo-presentacion.md). Para la exposición oral, ver
+[presentacion-oral.md](presentacion-oral.md). El guion de esta sección es la
+versión previa del MVP y se conserva como referencia.
 
 Usá una base aislada como indica el [README](../README.md#instalación-y-ejecución).
 El recorrido propuesto supone una base nueva:
@@ -215,16 +225,37 @@ se prueban independientemente.
 ## Limitaciones y posibles mejoras
 
 **Actuales:** no hay autenticación ni control de acceso; se recomienda uso
-local, no exposición directa a Internet. No hay edición, importación masiva,
-scraping ni integraciones OSINT. La interfaz no elimina registros ni crea
-evidencias. No existe normalización automática ni migraciones de esquema
-implementadas; `create_all` no migra tablas existentes. La proyección se
-reconstruye por proceso y tras cada escritura: cambios externos a SQLite o
-varios procesos no se sincronizan automáticamente. La API puede fallar después
-de confirmar una escritura, y DFS tiene límite práctico de recursión.
+local, no exposición directa a Internet. La interfaz no elimina entidades ni
+relaciones (la API sí), no muestra el contenido de las evidencias, no crea
+evidencias y no tiene buscador por texto. No hay importación masiva, scraping ni
+integraciones OSINT más allá de la consulta DNS descrita. No existe normalización
+automática del valor normalizado ni migraciones de esquema implementadas;
+`create_all` no migra tablas existentes. La proyección se reconstruye por proceso y
+tras cada escritura: cambios externos a SQLite o varios procesos no se sincronizan
+automáticamente. La API puede fallar después de confirmar una escritura.
 
-**Posibles mejoras, no implementadas:** definir normalización por tipo,
-incorporar migraciones, mejorar atomicidad y recuperación, sincronizar
-proyecciones entre procesos, agregar pruebas automatizadas en navegador y,
-si el alcance futuro lo requiere, ampliar la gestión de datos y el control
-de acceso. No son requisitos docentes confirmados.
+Limitaciones de la validación de nombres e incorporación DNS:
+
+- IDNA 2008 no está implementado completamente. La política de D-20 y P-06 es
+  limitada y no garantiza validez ante registros externos.
+- Los CRUD manuales comparan texto exacto y pueden crear representaciones
+  equivalentes de un dominio (Unicode y punycode). La incorporación DNS sí detecta
+  ese caso y responde 409 (P-05).
+- La incorporación responde 409 ante entidades ambiguas, sin escrituras parciales.
+- La sincronización del grafo en memoria se garantiza para un proceso, no para
+  múltiples workers ni varias instancias sobre la misma base.
+- CNAME, MX y NS solo se muestran; su incorporación no está implementada.
+- La fuente y la fecha de una incorporación son declaradas por el cliente. Eso no
+  equivale a una verificación independiente del servidor.
+
+Limitación del algoritmo DFS: está implementado de forma recursiva. En la
+verificación, una cadena de 900 nodos se recorrió y una de 1200 produjo
+`RecursionError`, por el límite de recursión de Python (1000 por defecto). BFS
+recorrió ambas cadenas.
+
+**Posibles mejoras, no implementadas:** eliminar desde la interfaz (P-04), definir
+normalización por tipo (P-02), implementar IDNA 2008 (P-06), incorporar CNAME, MX y
+NS, convertir DFS a una versión iterativa, incorporar migraciones, sincronizar
+proyecciones entre procesos, agregar pruebas automatizadas en navegador y, si el
+alcance futuro lo requiere, ampliar la gestión de datos y el control de acceso. No
+son requisitos docentes confirmados.

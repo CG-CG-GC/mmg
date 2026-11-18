@@ -1,0 +1,9 @@
+# Configuración de Ruff para Mini-Maltego. Guía: docs/herramientas-calidad-seguridad.md
+
+line-length = 100
+target-version = "py313"
+
+[lint]
+# E4, E7, E9 y F detectan errores reales; B detecta patrones propensos a bugs.
+# El orden de imports (I) no se exige para evitar reformatear archivos sin necesidad.
+select = ["E4", "E7", "E9", "F", "B"]

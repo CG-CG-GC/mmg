@@ -12,6 +12,7 @@ class Entidad:
     valor: str
     descripcion: str | None = None
     metadata: dict[str, Any] | None = None
+    valor_normalizado: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.id, int) or isinstance(self.id, bool) or self.id <= 0:

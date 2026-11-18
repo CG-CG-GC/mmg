@@ -1,0 +1,8 @@
+# Configuración de Bandit para Mini-Maltego. Guía: docs/herramientas-calidad-seguridad.md
+exclude_dirs:
+  - .venv
+  - .git
+  - .pytest_cache
+  - .agents
+  - .claude
+  - data

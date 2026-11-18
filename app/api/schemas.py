@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.domain.tipos import TipoEntidad, TipoRelacion
 
@@ -18,17 +18,41 @@ class EntityCreateRequest(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
+class EntityUpdateRequest(BaseModel):
+    tipo: TipoEntidad
+    valor: str = Field(min_length=1)
+    valor_normalizado: str = Field(min_length=1)
+    descripcion: str | None = None
+    metadata: dict[str, Any] | None = None
+
+    @field_validator("valor", "valor_normalizado")
+    @classmethod
+    def reject_blank_values(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("El valor no puede estar vacío.")
+        return value
+
+
 class EntityResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     tipo: TipoEntidad
     valor: str
+    valor_normalizado: str
     descripcion: str | None = None
     metadata: dict[str, Any] | None = None
 
 
 class RelationCreateRequest(BaseModel):
+    origen_id: int = Field(gt=0)
+    destino_id: int = Field(gt=0)
+    tipo: TipoRelacion
+    descripcion: str | None = None
+    fecha: date | datetime | None = None
+
+
+class RelationUpdateRequest(BaseModel):
     origen_id: int = Field(gt=0)
     destino_id: int = Field(gt=0)
     tipo: TipoRelacion

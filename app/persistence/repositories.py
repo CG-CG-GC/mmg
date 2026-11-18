@@ -13,7 +13,14 @@ from app.domain.evidencia import Evidencia
 from app.domain.relacion import Relacion
 from app.domain.tipos import TipoEntidad, TipoRelacion
 from app.persistence.database import session_scope
-from app.persistence.errors import DataMappingError, IntegrityConstraintError, RepositoryError
+from app.persistence.errors import (
+    DataMappingError,
+    ForeignKeyConstraintError,
+    IntegrityConstraintError,
+    RecordNotFoundError,
+    RepositoryError,
+    UniqueConstraintError,
+)
 from app.persistence.mappers import (
     entidad_from_model,
     evidencia_from_model,
@@ -56,6 +63,35 @@ class EvidenciaCreateData:
     fecha: date | datetime | None = None
 
 
+@dataclass(slots=True)
+class EntidadUpdateData:
+    """Estado completo y deseado de los campos editables de una entidad.
+
+    Es un reemplazo total (no parcial): None en descripcion/metadata las vacía.
+    El valor_normalizado se persiste tal como llega; la persistencia no lo calcula.
+    """
+
+    tipo: TipoEntidad
+    valor: str
+    valor_normalizado: str
+    descripcion: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class RelacionUpdateData:
+    """Estado completo y deseado de los campos editables de una relación.
+
+    Las evidencias no forman parte de la edición y se conservan intactas.
+    """
+
+    origen_id: int
+    destino_id: int
+    tipo: TipoRelacion
+    descripcion: str | None = None
+    fecha: date | datetime | None = None
+
+
 class EntidadRepository:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self._session_factory = session_factory
@@ -78,11 +114,39 @@ class EntidadRepository:
         except DataMappingError:
             raise
         except IntegrityError as exc:
-            raise IntegrityConstraintError(
-                "No se pudo crear la entidad por una restricción de integridad."
+            raise _translate_integrity_error(
+                exc,
+                conflict="Ya existe una entidad con el mismo tipo y valor normalizado.",
+                generic="No se pudo crear la entidad por una restricción de integridad.",
             ) from exc
         except SQLAlchemyError as exc:
             raise RepositoryError("No se pudo crear la entidad en persistencia.") from exc
+
+    def update(self, entity_id: int, data: EntidadUpdateData) -> Entidad:
+        """Actualiza in situ la entidad existente; conserva su id, relaciones y evidencias."""
+        try:
+            with session_scope(self._session_factory) as session:
+                model = session.get(EntidadModel, entity_id)
+                if model is None:
+                    raise RecordNotFoundError(f"No existe entidad con id {entity_id}.")
+                model.tipo_entidad_id = _resolve_entity_type_id(session, data.tipo)
+                model.valor = data.valor
+                model.valor_normalizado = data.valor_normalizado
+                model.descripcion = data.descripcion
+                model.metadata_json = serialize_metadata(data.metadata)
+                session.flush()
+                session.refresh(model, attribute_names=["tipo_entidad"])
+                return entidad_from_model(model)
+        except RepositoryError:
+            raise
+        except IntegrityError as exc:
+            raise _translate_integrity_error(
+                exc,
+                conflict="Ya existe otra entidad con el mismo tipo y valor normalizado.",
+                generic=f"No se pudo actualizar la entidad {entity_id} por una restricción de integridad.",
+            ) from exc
+        except SQLAlchemyError as exc:
+            raise RepositoryError(f"No se pudo actualizar la entidad con id {entity_id}.") from exc
 
     def get_by_id(self, entity_id: int) -> Entidad | None:
         try:
@@ -144,11 +208,42 @@ class RelacionRepository:
         except DataMappingError:
             raise
         except IntegrityError as exc:
-            raise IntegrityConstraintError(
-                "No se pudo crear la relación por una restricción de integridad."
+            raise _translate_integrity_error(
+                exc,
+                conflict="Ya existe una relación con el mismo origen, destino y tipo.",
+                generic="No se pudo crear la relación por una restricción de integridad.",
             ) from exc
         except SQLAlchemyError as exc:
             raise RepositoryError("No se pudo crear la relación en persistencia.") from exc
+
+    def update(self, relation_id: int, data: RelacionUpdateData) -> Relacion:
+        """Actualiza in situ la relación existente; conserva su id y sus evidencias."""
+        try:
+            with session_scope(self._session_factory) as session:
+                model = session.get(RelacionModel, relation_id)
+                if model is None:
+                    raise RecordNotFoundError(f"No existe relación con id {relation_id}.")
+                model.origen_id = data.origen_id
+                model.destino_id = data.destino_id
+                model.tipo_relacion_id = _resolve_relation_type_id(session, data.tipo)
+                model.descripcion = data.descripcion
+                model.fecha = serialize_temporal(data.fecha)
+                session.flush()
+                session.refresh(model, attribute_names=["tipo_relacion", "evidencias"])
+                return relacion_from_model(model)
+        except RepositoryError:
+            raise
+        except IntegrityError as exc:
+            raise _translate_integrity_error(
+                exc,
+                conflict="Ya existe otra relación con el mismo origen, destino y tipo.",
+                generic=(
+                    f"No se pudo actualizar la relación {relation_id} por una restricción "
+                    "de integridad."
+                ),
+            ) from exc
+        except SQLAlchemyError as exc:
+            raise RepositoryError(f"No se pudo actualizar la relación con id {relation_id}.") from exc
 
     def get_by_id(self, relation_id: int) -> Relacion | None:
         try:
@@ -264,6 +359,34 @@ class EvidenciaRepository:
                 return True
         except SQLAlchemyError as exc:
             raise RepositoryError(f"No se pudo eliminar la evidencia con id {evidence_id}.") from exc
+
+
+def _translate_integrity_error(
+    exc: IntegrityError, *, conflict: str, generic: str
+) -> IntegrityConstraintError:
+    """Distingue conflictos de unicidad de otras violaciones de integridad (p. ej. FK)."""
+    if _is_unique_violation(exc):
+        return UniqueConstraintError(conflict)
+    if _is_foreign_key_violation(exc):
+        return ForeignKeyConstraintError("Una referencia apunta a un registro inexistente.")
+    return IntegrityConstraintError(generic)
+
+
+def _is_unique_violation(exc: IntegrityError) -> bool:
+    original = exc.orig
+    # Python 3.11+ expone el código extendido de SQLite; antes solo hay mensaje.
+    error_name = getattr(original, "sqlite_errorname", None)
+    if error_name is not None:
+        return error_name == "SQLITE_CONSTRAINT_UNIQUE"
+    return "UNIQUE constraint failed" in str(original)
+
+
+def _is_foreign_key_violation(exc: IntegrityError) -> bool:
+    original = exc.orig
+    error_name = getattr(original, "sqlite_errorname", None)
+    if error_name is not None:
+        return error_name == "SQLITE_CONSTRAINT_FOREIGNKEY"
+    return "FOREIGN KEY constraint failed" in str(original)
 
 
 def _resolve_entity_type_id(session: Session, entity_type: TipoEntidad) -> int:

@@ -7,8 +7,11 @@
   <title>Mini-Maltego académico</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/osint.css">
   <script defer src="/static/vendor/cytoscape.min.js"></script>
   <script defer src="/static/app.js"></script>
+  <script defer src="/static/osint-incorporacion.js"></script>
+  <script defer src="/static/osint.js"></script>
 </head>
 <body>
   <header class="masthead">
@@ -28,12 +31,27 @@
             <button type="button" id="fit">Ajustar vista</button>
           </div>
         </div>
+        <div class="layout-control">
+          <label for="layout">Distribución</label>
+          <select id="layout" aria-describedby="layout-help">
+            <option value="cose">Fuerzas · agrupa lo conectado</option>
+            <option value="breadthfirst">Jerárquica · sigue la dirección</option>
+            <option value="concentric">Concéntrica · centro por grado</option>
+            <option value="circle">Círculo · orden uniforme</option>
+            <option value="grid">Cuadrícula · lectura ordenada</option>
+          </select>
+          <span id="layout-help" class="field-help">Solo cambia la posición de los nodos, no los datos.</span>
+        </div>
         <p class="help">Las flechas indican la dirección. Seleccioná un elemento en el grafo o en la lista para ver sus detalles.</p>
         <div class="graph-frame">
           <div id="graph" aria-label="Visualización del grafo dirigido"></div>
           <p id="graph-message" class="graph-message" role="status">Cargando grafo…</p>
         </div>
         <div class="graph-footer"><span id="graph-count">—</span><span>Desplazá el fondo y usá la rueda para acercar o alejar.</span></div>
+        <div class="indicators" aria-label="Indicadores del grafo">
+          <div><h3>Entidades por tipo</h3><ul id="entity-stats"></ul></div>
+          <div><h3>Relaciones por tipo</h3><ul id="relation-stats"></ul></div>
+        </div>
         <details class="element-list">
           <summary>Explorar elementos en una lista</summary>
           <div class="list-columns">
@@ -104,6 +122,48 @@
         <div class="result" aria-live="polite"><h3>Resultado</h3><div id="result"><p class="muted">Elegí un algoritmo y una entidad inicial.</p></div></div>
       </section>
     </div>
+    <section class="osint" aria-labelledby="osint-title">
+      <p class="eyebrow">06 / OSINT DNS</p>
+      <h2 id="osint-title">Consultar registros DNS públicos</h2>
+      <p class="help">El servidor consulta Google Public DNS. El resultado es solo una vista previa: no crea entidades, relaciones ni evidencias.</p>
+      <div class="osint-layout">
+        <form id="osint-form" novalidate>
+          <fieldset id="osint-controls">
+            <label for="osint-domain">Dominio</label>
+            <input id="osint-domain" name="dominio" autocomplete="off" spellcheck="false" aria-describedby="osint-domain-help">
+            <p id="osint-domain-help" class="field-help">Solo el nombre, por ejemplo example.com. Sin http://, rutas ni direcciones IP.</p>
+            <fieldset>
+              <legend>Tipos de registro</legend>
+              <div class="osint-types">
+                <label for="osint-type-A"><input type="checkbox" id="osint-type-A" checked><b>A</b> dirección IPv4</label>
+                <label for="osint-type-AAAA"><input type="checkbox" id="osint-type-AAAA" checked><b>AAAA</b> dirección IPv6</label>
+                <label for="osint-type-CNAME"><input type="checkbox" id="osint-type-CNAME" checked><b>CNAME</b> alias de otro nombre</label>
+                <label for="osint-type-MX"><input type="checkbox" id="osint-type-MX" checked><b>MX</b> servidores de correo</label>
+                <label for="osint-type-NS"><input type="checkbox" id="osint-type-NS" checked><b>NS</b> servidores de nombres</label>
+              </div>
+            </fieldset>
+            <button class="primary" type="submit" id="osint-submit">Consultar DNS</button>
+          </fieldset>
+          <p class="form-message" id="osint-message" role="status" aria-live="polite"></p>
+        </form>
+        <div class="osint-output">
+          <h3>Vista previa</h3>
+          <section class="osint-incorporate" aria-labelledby="osint-incorporate-title">
+            <h4 id="osint-incorporate-title">Incorporar al grafo</h4>
+            <p class="field-help">Solo A y AAAA. Para incorporar un registro, primero marcalo como Revisado. Cada lote pide confirmación.</p>
+            <p id="osint-incorporate-count" class="osint-incorporate-count">No hay registros seleccionados para incorporar.</p>
+            <div class="osint-incorporate-actions">
+              <button type="button" id="osint-incorporate-open" disabled>Revisar incorporación</button>
+              <button type="button" id="osint-incorporate-refresh" hidden>Actualizar grafo</button>
+            </div>
+            <section id="osint-confirm" aria-labelledby="osint-confirm-title" hidden></section>
+            <p class="form-message" id="osint-incorporate-message" role="status" aria-live="polite"></p>
+            <div id="osint-incorporate-result"></div>
+          </section>
+          <div id="osint-preview" aria-busy="false"></div>
+        </div>
+      </div>
+    </section>
   </main>
   <footer>Mini-Maltego académico <span>·</span> Visualización de un grafo dirigido</footer>
 </body>
