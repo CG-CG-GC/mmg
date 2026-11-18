@@ -114,14 +114,7 @@ base local mediante la API real.
 
 - [Manual de usuario](docs/manual-usuario.md): instalación en Windows con VS Code,
   uso de cada sección, capturas y errores frecuentes.
-- [Demostración guiada para la defensa](docs/demo-presentacion.md): pasos, entradas
-  exactas, resultados esperados y plan alternativo.
-- [Guion de presentación oral](docs/presentacion-oral.md): exposición de 10 a 15
-  minutos, preguntas probables y esquema de diapositivas.
 - [Arquitectura, modelo, algoritmos, pruebas y defensa](docs/mvp-academico.md).
 - [Interfaz](docs/frontend.md).
 - [Herramientas de calidad y seguridad](docs/herramientas-calidad-seguridad.md).
 - [Estado del proyecto](docs/estado-proyecto.md).
-- Los documentos de arquitectura, dominio, diseño y contrato conservan
-  propuestas y decisiones previas; sus indicaciones sobre implementación deben
-  contrastarse con el código y la guía del MVP.
