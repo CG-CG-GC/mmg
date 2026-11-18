@@ -1,0 +1,47 @@
+{
+  "_aviso": "SIMULACIÓN para demostración y capturas. No es una consulta DNS real. Se usa solo con interceptación del navegador (ver docs/demo-presentacion.md).",
+  "dominio": "example.com",
+  "fuente": "simulacion-demo-sin-red",
+  "consultado_en": "2026-11-18T12:00:00Z",
+  "registros": [
+    {
+      "tipo": "A",
+      "valor": "192.0.2.1",
+      "estado": "encontrado",
+      "fuente": "simulacion-demo-sin-red",
+      "consultado_en": "2026-11-18T12:00:00Z",
+      "prioridad": null
+    },
+    {
+      "tipo": "AAAA",
+      "valor": "2001:db8::1",
+      "estado": "encontrado",
+      "fuente": "simulacion-demo-sin-red",
+      "consultado_en": "2026-11-18T12:00:00Z",
+      "prioridad": null
+    },
+    {
+      "tipo": "MX",
+      "valor": "mail.example.com",
+      "estado": "encontrado",
+      "fuente": "simulacion-demo-sin-red",
+      "consultado_en": "2026-11-18T12:00:00Z",
+      "prioridad": 10
+    },
+    {
+      "tipo": "NS",
+      "valor": "ns1.example.com",
+      "estado": "encontrado",
+      "fuente": "simulacion-demo-sin-red",
+      "consultado_en": "2026-11-18T12:00:00Z",
+      "prioridad": null
+    }
+  ],
+  "estados": [
+    { "tipo": "A", "estado": "ok", "descartados": 0 },
+    { "tipo": "AAAA", "estado": "ok", "descartados": 0 },
+    { "tipo": "CNAME", "estado": "sin_registros", "descartados": 0 },
+    { "tipo": "MX", "estado": "ok", "descartados": 0 },
+    { "tipo": "NS", "estado": "ok", "descartados": 0 }
+  ]
+}

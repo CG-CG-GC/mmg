@@ -9,3 +9,7 @@ Para trabajo de interfaz, textos o comentarios de código, aplicá las reglas de
 
 Estas reglas no reemplazan las pruebas ni los controles de `docs/herramientas-calidad-seguridad.md`.
 <!-- antislop:end -->
+
+## Coordinación de agentes
+
+Antes de trabajar, leé `docs/agents/README.md`: define el orden de lectura, las fichas por agente y cómo registrar entregas.

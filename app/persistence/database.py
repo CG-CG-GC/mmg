@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from sqlalchemy import Engine, create_engine, event, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.persistence.errors import ForeignKeysDisabledError
+from app.persistence.errors import DatabaseBusyError, ForeignKeysDisabledError
 
 
 def sqlite_url_from_path(database_path: str | Path) -> str:
@@ -53,6 +54,42 @@ def session_scope(session_factory: sessionmaker[Session]) -> Generator[Session, 
         raise
     finally:
         session.close()
+
+
+@contextmanager
+def transaccion_inmediata(session_factory: sessionmaker[Session]) -> Generator[Session, None, None]:
+    """Una sola sesión con BEGIN IMMEDIATE; solo para el flujo de incorporación DNS.
+
+    El modo AUTOCOMMIT se pide a nivel de conexión: sqlite3 no abre un BEGIN propio
+    y el engine compartido no cambia. El commit y el rollback siguen siendo los de
+    la sesión.
+    """
+    session = session_factory()
+    try:
+        conexion = session.connection(execution_options={"isolation_level": "AUTOCOMMIT"})
+        assert_foreign_keys_enabled(session)
+        conexion.exec_driver_sql("BEGIN IMMEDIATE")
+        yield session
+        session.commit()
+    except OperationalError as exc:
+        session.rollback()
+        if es_bloqueo_sqlite(exc):
+            raise DatabaseBusyError(
+                "La base de datos está ocupada por otra escritura; el lote no se aplicó."
+            ) from exc
+        raise
+    except BaseException:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def es_bloqueo_sqlite(exc: OperationalError) -> bool:
+    error_name = getattr(exc.orig, "sqlite_errorname", None)
+    if error_name is not None:
+        return error_name.startswith(("SQLITE_BUSY", "SQLITE_LOCKED"))
+    return "database is locked" in str(exc.orig)
 
 
 def _register_foreign_keys_pragma(engine: Engine) -> None:

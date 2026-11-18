@@ -72,6 +72,7 @@ def entidad_from_model(model: EntidadModel) -> Entidad:
         valor=model.valor,
         descripcion=model.descripcion,
         metadata=deserialize_metadata(model.metadata_json),
+        valor_normalizado=model.valor_normalizado,
     )
 
 
@@ -105,4 +106,3 @@ def relacion_from_model(model: RelacionModel) -> Relacion:
         fecha=deserialize_temporal(model.fecha),
         evidencias=evidencias,
     )
-

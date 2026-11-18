@@ -1,0 +1,52 @@
+.osint { margin-top: 1.5rem; border-top: 2px solid var(--ink); padding-top: 1.25rem; }
+.osint-layout { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.osint fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.osint legend { padding: 0; font-size: .875rem; font-weight: 700; margin-top: .75rem; }
+.osint-types { display: grid; gap: .25rem; margin-top: .35rem; }
+.osint-types label { display: flex; align-items: center; gap: .6rem; min-height: 44px; margin: 0; font-weight: 400; cursor: pointer; }
+.osint-types label b { min-width: 3.5rem; }
+.osint-types input, .osint-review input { width: 1.25rem; height: 1.25rem; padding: 0; margin: 0; flex: none; cursor: pointer; accent-color: var(--accent); }
+.osint-types input:disabled, .osint-review input:disabled { cursor: not-allowed; }
+#osint-preview { min-width: 0; overflow-wrap: anywhere; }
+#osint-preview.is-loading { opacity: .55; }
+.osint-banner { margin: 0 0 1rem; padding: .65rem .85rem; background: #e8eee4; border: 1px solid var(--line); }
+.osint-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .5rem 1rem; margin: 0 0 .75rem; }
+.osint-summary dt { margin: 0; font-size: .8125rem; color: var(--muted); }
+.osint-summary dd { margin: 0; font-weight: 700; }
+.osint-group { border-top: 1px solid var(--line); padding: 1rem 0; }
+.osint-group-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.osint-group-head h3 { margin: 0; }
+.osint-meta { margin: .25rem 0 0; font-size: .8125rem; color: var(--muted); }
+.osint-explain { margin: .5rem 0 0; font-size: .875rem; }
+.osint-badge { display: inline-block; padding: .1rem .5rem; border: 1px solid; font-size: .8125rem; font-weight: 700; }
+.osint-ok { background: #e3ede3; color: #1f4a2e; border-color: #7da587; }
+.osint-neutral { background: #ecece4; color: #3f453b; border-color: #a2a898; }
+.osint-warn { background: #f6ecd3; color: #5c3f0c; border-color: #c4a45c; }
+.osint-error { background: #f8eae6; color: #70231d; border-color: #c98c84; }
+.osint-records { list-style: none; margin: .75rem 0 0; padding: 0; }
+.osint-records li { padding: .6rem 0; border-bottom: 1px dotted var(--line); }
+.osint-record-head { display: flex; align-items: center; gap: .5rem .75rem; flex-wrap: wrap; }
+.osint-priority { font-size: .8125rem; color: var(--muted); }
+.osint-dupe { margin: .25rem 0 0; font-size: .875rem; color: var(--muted); }
+.osint-dupe[data-kind=dupe] { color: #5c3f0c; font-weight: 700; }
+.osint-domain-dupe { margin: 0 0 .5rem; }
+.osint-review { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; margin: 0; font-weight: 400; cursor: pointer; }
+.osint-output .form-message { min-height: 1.5em; }
+.osint .form-message:not(.error):not(.success) { color: var(--ink); }
+#osint-clear { margin-top: .75rem; }
+.osint-review-row { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1.25rem; }
+.osint-note { margin: 0; min-height: 44px; display: flex; align-items: center; font-size: .875rem; color: var(--muted); }
+.osint-incorporate { margin: 0 0 1rem; padding: .85rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.osint-incorporate h4, #osint-confirm h4, #osint-incorporate-result h4 { margin: 0 0 .35rem; font-size: 1rem; }
+.osint-incorporate-count { margin: .25rem 0 .75rem; font-weight: 700; }
+.osint-incorporate-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.osint-incorporate-actions button { min-height: 44px; }
+#osint-confirm { margin-top: .75rem; padding: .85rem 1rem; background: var(--panel); border: 1px solid var(--line); }
+#osint-confirm h4:focus, #osint-result-title:focus { outline: 3px solid #b37b24; outline-offset: 2px; }
+.osint-confirm-list, .osint-incorporate-list { margin: .35rem 0 .5rem; padding-left: 1.25rem; font-size: .875rem; overflow-wrap: anywhere; }
+.osint-confirm-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+.osint-confirm-actions button { min-height: 44px; }
+.osint-confirm-actions .primary { margin-top: 0; }
+#osint-incorporate-result { margin-top: .75rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 900px) { .osint-layout { grid-template-columns: 1fr; } }
