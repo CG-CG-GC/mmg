@@ -1,8 +1,9 @@
 import json
 import sqlite3
-import subprocess
 import sys
 from pathlib import Path
+
+import subprocess  # nosec B404
 
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -10,7 +11,8 @@ SCRIPT = RAIZ / "scripts" / "preparar_demo_personal.py"
 
 
 def _ejecutar(perfil: Path, base: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    # Ejecuta el script fijo con argumentos explícitos, rutas temporales y sin shell.
+    return subprocess.run(  # nosec B603
         [
             sys.executable,
             str(SCRIPT),
