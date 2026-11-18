@@ -88,27 +88,14 @@ Ruff, Bandit, pip-audit y el flujo de GitHub Actions están descritos en
 
 ## Demostración académica
 
-Para practicar o exponer sin tocar tus datos, creá una base nueva con datos
-ficticios y arrancá el servidor con ella:
-
 ```powershell
 .\.venv\Scripts\python.exe scripts\preparar_demo.py
 ```
 
 El script imprime la ruta de la base creada y el comando para iniciar el servidor.
 Cada ejecución crea un archivo nuevo, nunca reutiliza uno existente y nunca usa
-`data/mmg.sqlite3`. La respuesta DNS de las capturas es simulada; ver
-[la guía de demostración](docs/demo-presentacion.md).
+`data/mmg.sqlite3`.
 
-Para una demostración personal, `scripts/preparar_demo_personal.py` lee un
-`perfil.json` local con los campos `nombre`, `correo`, `usuario_github`,
-`perfil_github` y `sitio_web`. El perfil y la base SQLite se guardan por
-defecto fuera del repositorio, en `%LOCALAPPDATA%\MiniMaltego\demo-personal`;
-el script no sobrescribe una base existente y rechaza rutas dentro del proyecto.
-No se versionan el archivo de perfil, la base ni capturas con datos personales.
-La consulta DNS requiere red salvo que se intercepte en el navegador para una
-simulación identificada como tal; la incorporación resultante se guarda en la
-base local mediante la API real.
 
 ## Documentación
 
